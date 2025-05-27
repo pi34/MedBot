@@ -41,6 +41,9 @@ AUTOTUNE = tf.data.AUTOTUNE
 train_data = train_data.map(lambda x, y: (data_augmentation(x), y)).prefetch(AUTOTUNE)
 val_data   = val_data.prefetch(AUTOTUNE)
 
+train_data = train_data.map(lambda x, y: (tf.cast(x, tf.float32) / 255.0, y))
+val_data = val_data.map(lambda x, y: (tf.cast(x, tf.float32) / 255.0, y))
+
 base_model = ResNet50(include_top=False, weights='imagenet', input_shape=(224,224,3))
 base_model.trainable = False  
 
@@ -74,7 +77,9 @@ history = model.fit(
 
 print("Training complete. Best model saved to", "Wound_model.h5")
 
-base_model.trainable = True
+for layer in base_model.layers[-20:]:  # Unfreeze last 20 layers
+    layer.trainable = True
+        
 model.compile(
     optimizer=tf.keras.optimizers.Adam(learning_rate=lr/10),
     loss='sparse_categorical_crossentropy',
